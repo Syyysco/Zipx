@@ -1,0 +1,351 @@
+#!/bin/bash
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+
+# Author: Jose Francisco López aka Sysco
+# Github: https://github.com/Syyysco/Zipx
+
+
+
+# Colors
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+RESET="\033[0m"
+
+# List of supported formats
+SUPPORTED_FORMATS=("tar" "tar.gz" "tgz" "tar.bz2" "tbz2" "tar.xz" "zip" "7z" "gz" "bz2" "xz" "rar" "pkg" "pax" "lzma" "lzip" "cab")
+
+# Function to display help
+show_help() {
+    echo -e "\r"
+    echo -e "${BLUE}Use:${RESET} $0 [options] file"
+    echo -e "\r"
+    echo -e "${YELLOW}Options:${RESET}"
+    echo -e "  ${GREEN}-h, --help        ${RESET}Show this help panel"
+    echo -e "  ${GREEN}-l, --less        ${RESET}Show the contents of the compressed file without extracting it"
+    echo -e "  ${GREEN}-L, --less-tree   ${RESET}List the entire contents recursively in tree format"
+    echo -e "  ${GREEN}-z, --zip         ${RESET}Compress the file or folder in the format specified with -f"
+    echo -e "  ${GREEN}-x, --unzip       ${RESET}Decompress the file recursively until there are no more compressed files"
+    echo -e "  ${GREEN}-q, --quiet       ${RESET}Run the program in silent mode without displaying output"
+    echo -e "  ${GREEN}-f, --format      ${RESET}Compression format"
+    echo -e "                     ┕( ${SUPPORTED_FORMATS[*]} )"
+    echo -e "\r"
+}
+
+
+# Function to display recursive content in tree format
+list_content() {
+    local file="$1"
+    local quiet_mode="${2:-false}"
+    local mode="$3"
+    local sum
+    local cached_file
+    local temp_dir
+    local write_cache="true"
+    sum=$(md5sum "$file")
+    cached_file=$(cat "$CACHE_LIST" | grep "$sum" | awk '{print $NF}' | head -n 1)
+
+    if [[ "$cached_file" ]]; then
+        temp_dir="$cached_file"
+        write_cache="false"
+    else
+        temp_dir=$(mktemp -d)
+        mv "$temp_dir" "$MAIN_TEMP_DIR"
+        temp_dir=$(basename "$temp_dir")
+        temp_dir="$MAIN_TEMP_DIR/$temp_dir"
+        case $(file --mime-type -b "$file") in
+            application/x-tar)
+                tar -xf "$file" -C "$temp_dir" ;;
+            application/gzip)
+                tar -zxf "$file" -C "$temp_dir" ;;
+            application/x-bzip2)
+                tar -jxf "$file" -C "$temp_dir" ;;
+            application/x-xz)
+                tar -Jxf "$file" -C "$temp_dir" ;;
+            application/zip)
+                unzip -q "$file" -d "$temp_dir" ;;
+            application/x-7z-compressed)
+                7z x "$file" -o"$temp_dir" -y ;;
+            application/vnd.rar)
+	        7z x "$file" "$temp_dir" &> /dev/null ;;
+	    application/x-tgz)
+	        tar -xzf "$file" -C "$temp_dir" &> /dev/null ;;
+	    application/x-tbz2)
+	        tar -xjf "$file" -C "$temp_dir" &> /dev/null ;;
+	    application/x-lzip)
+	        lzip -d -c "$file" | tar -xf - -C "$temp_dir" &> /dev/null ;;
+	    application/x-lzma)
+	        unlzma -c "$file" | tar -xf - -C "$temp_dir" &> /dev/null ;;
+	    application/x-pkg)
+	        bsdtar -xf "$file" -C "$temp_dir" &> /dev/null ;;
+	    application/x-pax)
+	        pax -rf "$file" -s ",^/,," -d "$temp_dir" &> /dev/null ;;
+            application/vnd.ms-cab-compressed)
+                gcab -x "$file" -C "$temp_dir" &> /dev/null ;;
+            *)
+                [[ "$quiet_mode" == "false" ]] && echo -e "\n${RED}Unsupported format.${RESET}\r"
+                write_cache="false"
+                exit 1
+                ;;
+        esac
+    fi
+    if [[ "$write_cache" ]];then
+        echo "$sum  ||  $temp_dir" >> "$CACHE_LIST"
+    fi
+    echo -e "\r"
+    if [[ "$mode" == "less" ]]; then
+        (cd "$temp_dir" && lsd -a)
+    else
+        (cd "$temp_dir" && tree *)
+    fi
+}
+
+# Function to compress files
+compress_file() {
+    local input="$1"
+    local output="$2"
+    local format="$3"
+    local quiet_mode="${3:-false}"
+
+    if [[ -z "$output" ]]; then
+        output="$input"
+    fi
+    local output="$(realpath "${output}.${format}")"
+    case "$format" in
+        tar)
+            tar -cf "$output" "$input" &> /dev/null;;
+        tar.gz | tgz)
+            tar -czf "$output" "$input" &> /dev/null;;
+        tar.bz2 | tbz2)
+            tar -cjf "$output" "$input" &> /dev/null;;
+        tar.xz)
+            tar -cJf "$output" "$input" &> /dev/null;;
+        zip)
+            zip -r "$output" "$input" &> /dev/null;;
+        7z)
+            7z a "$output" "$input" &> /dev/null;;
+        rar)
+            rar a "$output" "$input" &> /dev/null ;;
+        pkg)
+            mkdir -p tmp_pkg
+            cp -r "$input" tmp_pkg/
+            bsdtar -cf "$output" tmp_pkg &> /dev/null
+            rm -rf tmp_pkg ;;
+        pax)
+            pax -wf "$output" "$input" &> /dev/null ;;
+        lzma)
+            tar -cf - "$input" | lzma > "$output" &> /dev/null ;;
+        lzip)
+            tar -cf - "$input" | lzip > "$output" &> /dev/null ;;
+        cab)
+            gcab -c "$output" "$input" &> /dev/null;;
+        *)
+            [[ "$quiet_mode" == "false" ]] && echo -e "\n${RED}Unsupported format.${RESET}\r"
+            exit 1 ;;
+    esac
+}
+
+# Function to unzip files
+extract_file() {
+    local file="$1"
+    local output="$2"
+    local quiet_mode="${3:-false}"
+
+    if [[ -z "$output" ]]; then
+        output=$(pwd)
+    fi
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    local extracted=0
+    local total_files=0
+    local total_dirs=0
+    local sum
+    local cached_file
+    local temp_dir
+    local write_cache="true"
+    sum=$(md5sum "$file")
+    cached_file=$(cat "$CACHE_LIST" | grep "$sum" | awk '{print $NF}' | head -n 1)
+
+    if [[ "$cached_file" ]]; then
+        temp_dir="$cached_file"
+        write_cache="false"
+    else
+        temp_dir=$(mktemp -d)
+        mv "$temp_dir" "$MAIN_TEMP_DIR"
+        temp_dir=$(basename "$temp_dir")
+        temp_dir="$MAIN_TEMP_DIR/$temp_dir"
+
+        while true; do
+            case $(file --mime-type -b "$file") in
+                application/x-tar)
+                    tar -xf "$file" -C "$temp_dir" &> /dev/null;;
+                application/gzip)
+                    gunzip -c "$file" | tar -xf - -C "$temp_dir" &> /dev/null;;
+                application/x-bzip2)
+                    tar -jxf "$file" -C "$temp_dir" &> /dev/null;;
+                application/x-xz)
+                    tar -Jxf "$file" -C "$temp_dir" &> /dev/null;;
+                application/zip)
+                    unzip -q "$file" -d "$temp_dir" &> /dev/null;;
+                application/x-7z-compressed)
+                    7z x "$file" -o"$temp_dir" -y &> /dev/null;;
+                application/vnd.rar)
+		    unrar x "$file" "$temp_dir" &> /dev/null ;;
+		application/x-tgz)
+		    tar -xzf "$file" -C "$temp_dir" &> /dev/null ;;
+		application/x-tbz2)
+		    tar -xjf "$file" -C "$temp_dir" &> /dev/null ;;
+		application/x-lzip)
+		    lzip -d -c "$file" | tar -xf - -C "$temp_dir" &> /dev/null ;;
+		application/x-lzma)
+		    unlzma -c "$file" | tar -xf - -C "$temp_dir" &> /dev/null ;;
+		application/x-pkg)
+		    bsdtar -xf "$file" -C "$temp_dir" &> /dev/null ;;
+		application/x-pax)
+		    pax -rf "$file" -s ",^/,," -d "$temp_dir" &> /dev/null ;;
+                application/vnd.ms-cab-compressed)
+                    gcab -x "$file" -C "$temp_dir" &> /dev/null;;
+                *)
+                    if [[ "$extracted" -eq 0 ]]; then
+                        [[ "$quiet_mode" == "false" ]] && echo -e "${RED}Unsupported format.${RESET}"
+                        write_cache="false"
+                        exit 1
+                    fi
+                    break
+                    ;;
+            esac
+
+            ((extracted++))
+            total_files=$(find "$temp_dir" -type f | wc -l)
+            total_dirs=$(find "$temp_dir" -type d | wc -l)
+            if [[ "$quiet_mode" == "false" ]]; then
+                echo -e "\n${GREEN}Extracted:${RESET} ${file}"
+                echo -e "${YELLOW}${total_dirs}${RESET} folders"
+                echo -e "${YELLOW}${total_files}${RESET} files\n"
+            fi
+            if [[ ! $(find "$temp_dir" -type f -exec file --mime-type -b {} + | grep -E 'application/(x-tar|gzip|x-bzip2|x-xz|zip|x-7z-compressed)') ]]; then
+                break
+            else
+                file=$(find "$temp_dir" -type f -exec file --mime-type -b {} + | grep -E 'application/(x-tar|gzip|x-bzip2|x-xz|zip|x-7z-compressed)' | head -n 1)
+            fi
+        done
+    fi
+    if [[ "$extracted" -ge 1 ]]; then
+        [[ "$quiet_mode" == "false" ]] && echo -e "\n${YELLOW}•${RESET}Removing intermediate files...\r"
+        find "$temp_dir" -name "*.tar" -o -name "*.gz" -o -name "*.bz2" -o -name "*.xz" -o -name "*.zip" -exec rm -f {} +
+    fi
+    if [[ "$write_cache" ]];then
+        echo "$sum  ||  $temp_dir" >> "$CACHE_LIST"
+    fi
+    if [[ "$quiet_mode" == "false" ]]; then
+        cp -r "$temp_dir"/* "$output" 2> /dev/null
+    else
+        cp -r "$temp_dir"/* "$output"
+    fi
+}
+
+# Process arguments
+ACTION=""
+FORMAT=""
+INPUT=""
+OUTPUT=""
+QUIET_MODE="false"
+MAIN_TEMP_DIR="/tmp/zipx"
+CACHE_LIST="$MAIN_TEMP_DIR""/.cache"
+
+if [[ ! -d "$MAIN_TEMP_DIR" ]]; then
+    mkdir "$MAIN_TEMP_DIR" && touch "$CACHE_LIST"
+fi
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help) show_help; exit 0 ;;
+        -l|--less) ACTION="less" ;;
+        -L|--less-all) ACTION="less-all" ;;
+        -z|--zip) ACTION="zip" ;;
+        -f|--format)
+            if [[ -n "$2" && "$2" != -* ]]; then
+                FORMAT="$2"
+                shift
+            else
+                echo "Error: La opción $1 requiere un valor."
+                exit 1
+            fi
+            ;;
+        -o|--output)
+            if [[ -n "$2" && "$2" != -* ]]; then
+                OUTPUT="$2"
+                shift
+            else
+                echo "Error: La opción $1 requiere un valor."
+                exit 1
+            fi
+            ;;
+        -x|--unzip) ACTION="unzip" ;;
+        -q|--quiet) QUIET_MODE="true" ;;
+        -*)
+            echo "Error: Opción desconocida $1"
+            exit 1
+            ;;
+        *)
+            if [[ -z "$input_file" ]]; then
+                INPUT="$1"
+            else
+                echo "Too many arguments. File already specified as $input_file"
+                exit 1
+            fi
+            ;;
+    esac
+    shift
+done
+
+# Validate input
+if [[ -z "$INPUT" ]]; then
+    echo -e "\n${RED}Error:${RESET} You must specify a file or folder.\r"
+    show_help
+    exit 1
+fi
+
+if [[ ! -f "$INPUT" && ! -d "$INPUT" ]]; then
+    echo -e "$INPUT does not exist"
+    exit 1
+fi
+
+if [[ "$ACTION" == "less" || "$ACTION" == "less-all" ]]; then
+    list_content "$INPUT" "$QUIET_MODE" "$ACTION"
+
+elif [[ "$ACTION" == "zip" ]]; then
+    if [[ -z "$FORMAT" ]]; then
+        echo -e "\n${RED}Error:${RESET} You must specify a format with -f.\r"
+        show_help
+        exit 1
+    fi
+
+    if [[ ! " ${SUPPORTED_FORMATS[*]} " =~ " $FORMAT " ]]; then
+        echo -e "\n${RED}Error:${RESET} Unsupported format."
+        echo -e "Valid formats: ${SUPPORTED_FORMATS[*]}\r"
+        exit 1
+    fi
+
+    compress_file "$INPUT" "$OUTPUT" "$FORMAT" "$QUIET_MODE"
+elif [[ "$ACTION" == "unzip" ]]; then
+    extract_file "$INPUT" "$OUTPUT" "$QUIET_MODE"
+else
+    echo -e "\n${RED}Error:${RESET} You must specify an action.\r"
+    show_help
+    exit 1
+fi

@@ -116,6 +116,7 @@ Options:
   -x, --unzip       Decompress the file recursively until there are no more compressed files
   -q, --quiet       Run the program in silent mode without displaying output
   -f, --format      Compression format
+  -o, --output      Specify a output file
                      ┕( tar tar.gz tgz tar.bz2 tbz2 tar.xz zip 7z gz bz2 xz rar pkg pax lzma lzip cab )
 ```
 
@@ -175,7 +176,7 @@ The application requires the following tools for full functionality:
 
 ### Tabla: Dependencias, Funciones y Usos en la Aplicación
 
-| **Dependence**      | **Function**                                                                                      | **Uso en la Aplicación**                                                                                      |
+| **Dependence**      | **Function**                                                                                      | **Use       **                                                                                      |
 |---------------------|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `tar`               | Compress and decompress files and folders in `tar`, `tar.gz`, `tar.bz2`, `tar.xz` formats         | Provides core functionality for `.tar`, `.tgz`, `.tbz2`, `.tar.xz` formats                                    |
 | `gzip`              | Compress and decompress `.gz` files                                                               | Used to handle `gzip` compressed files                                                                        |
