@@ -176,7 +176,7 @@ The application requires the following tools for full functionality:
 
 ### Tabla: Dependencias, Funciones y Usos en la Aplicación
 
-| **Dependence**      | **Function**                                                                                      | **Use       **                                                                                      |
+| **Dependence**      | **Function**                                                                                      | **Use on application**                                                                                        |
 |---------------------|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `tar`               | Compress and decompress files and folders in `tar`, `tar.gz`, `tar.bz2`, `tar.xz` formats         | Provides core functionality for `.tar`, `.tgz`, `.tbz2`, `.tar.xz` formats                                    |
 | `gzip`              | Compress and decompress `.gz` files                                                               | Used to handle `gzip` compressed files                                                                        |
@@ -187,7 +187,6 @@ The application requires the following tools for full functionality:
 | `p7zip-full`        | Handle compressed files in `.7z` format                                                           | Makes it easy to compress and decompress `.7z` files                                                          |
 | `unrar`             | Extract `.rar` files                                                                              | Handles decompression of `.rar` files                                                                         |
 | `rar`               | Compress files in `.rar` format                                                                   | Allows you to create compressed files in `.rar` format                                                        |
-| `cabextract`        | Extract `.cab` files                                                                              | Unzip Microsoft Cabinet `.cab` files                                                                          |
 | `gcab`              | Compress and decompress `.cab` files                                                              | Used to create and extract `.cab` files                                                                       |
 | `lzip`              | Compress and decompress `.lzip` files                                                             | Facilitates handling of compressed files with `lzip`                                                          |
 | `xz-utils`          | Compress and decompress `.xz` files                                                               | Provides support for the `.xz` format                                                                         |
