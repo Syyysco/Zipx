@@ -41,6 +41,7 @@ show_help() {
     echo -e "  ${GREEN}-z, --zip         ${RESET}Compress the file or folder in the format specified with -f"
     echo -e "  ${GREEN}-x, --unzip       ${RESET}Decompress the file recursively until there are no more compressed files"
     echo -e "  ${GREEN}-q, --quiet       ${RESET}Run the program in silent mode without displaying output"
+    echo -e "  ${GREEN}-o, --output      ${RESET}Specify an output file"
     echo -e "  ${GREEN}-f, --format      ${RESET}Compression format"
     echo -e "                     ┕( ${SUPPORTED_FORMATS[*]} )"
     echo -e "\r"
