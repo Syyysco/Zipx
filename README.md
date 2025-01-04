@@ -28,6 +28,7 @@ A professional command-line tool designed for **Linux systems** that unifies com
   - [Decompress Files](#decompress-files)
   - [List Archive Contents](#list-archive-contents)
 - [Dependencies](#dependencies)
+- [Possible Errors](#possible-errors)
 - [License](#license)
 
 ---
@@ -196,6 +197,10 @@ The application requires the following tools for full functionality:
 | `pax`               | Create and extract `.pax` files                                                                   | Facilitates handling of `pax` compressed files                                                                |
 | `libarchive-tools`  | Handle multiple archive formats, including `.pkg` and `.pax`                                      | Unzip and manipulate files packed in various formats                                                          |
 
+
+> [!important]
+> If you have any problems with dependencies, go to the [possible errors](#possible-errors) section.
+
 ---
 
 > #### **Example of use in compression:**
@@ -219,6 +224,52 @@ If any dependencies are missing, the application prompts you to install them usi
 ```bash
 sudo apt install -y <missing_tools>
 ```
+
+---
+
+## Possible errors
+
+### Package RAR
+```ruby
+Error: Unable to locate package rar
+```
+Sometimes in some distributions the `rar` package is not available because it is a proprietary software, to install it outside of `apt` follow these steps:
+
+#### Option 1:
+1. Edit the /etc/apt/preferences file and add these lines: (if the file does not exist on your system you will need to create it)
+
+```java
+  Package: *
+  Pin: release a=unstable
+  Pin-Priority: 50
+  These lines configure apt to use packages from the unstable branch only if they do not exist in your main branch.
+```
+
+2. Edit the `/etc/apt/sources.list` file and add this line if it does not already exist:
+  ```http
+  deb http://ftp.debian.org/debian/ unstable main contrib non-free
+  ```
+
+3. Update the sources and install with:
+  ```bash
+  apt-get update
+  apt-get install rar
+  ```
+> [!note]
+>  If you do not have administrator permissions and when trying to install you get an error for this reason try `sudo apt-get install rar`.
+
+#### Option 2:
+
+1. Download the `.tar` file (for linux) from [here](https://www.win-rar.com/download.html?&L=0)
+2. Go to the directory where you downloaded the file with `cd /home/your_user/Downloads`
+3. Unzip and install as follows:
+  ```bash
+  tar xvfz rarlinux-3.6.1.tar.gz
+  cd rar
+  make install
+  cd ..
+  rm -R rar
+  ```
 
 ---
 
