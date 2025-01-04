@@ -1,6 +1,6 @@
 <p align="center">
   <img src="src/img/main_banner.png" width="400" alt="Zipx - An all-in-one tools to handle compression methods"><br>
-  <img alt="GitHub Release" src="https://img.shields.io/github/v/release/:Syyysco/:Zipx?display_name=release&style=social&logoColor=0c0c0c&labelColor=0c0c0c&color=0c0c0c&link=https%3A%2F%2Fhola.com"><br>
+  <img alt="GitHub Release" src="https://img.shields.io/github/v/release/:Syyysco/:Zipx?display_name=release&style=social&logoColor=0c0c0c&labelColor=0c0c0c&color=0c0c0c&link=https%3A%2F%2Fgithub.com%2FSyyysco%2FZipx%2Freleases%2Ftag%2Fdebian-installer"><br>
   <img src="https://img.shields.io/badge/%20-bash-white?logo=zsh&logoColor=white&labelColor=2c2c2c" alt="Build on bash"></a>
   <img src="https://img.shields.io/badge/license-GPL-blue?logo=gnuprivacyguard" alt="license">
   <img src="https://img.shields.io/github/last-commit/Syyysco/Zipx?colorB=319e8c" alt="Last Commit">
