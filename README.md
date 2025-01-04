@@ -115,8 +115,8 @@ Options:
   -z, --zip         Compress the file or folder in the format specified with -f
   -x, --unzip       Decompress the file recursively until there are no more compressed files
   -q, --quiet       Run the program in silent mode without displaying output
+  -o, --output      Specify an output file
   -f, --format      Compression format
-  -o, --output      Specify a output file
                      ┕( tar tar.gz tgz tar.bz2 tbz2 tar.xz zip 7z gz bz2 xz rar pkg pax lzma lzip cab )
 ```
 
